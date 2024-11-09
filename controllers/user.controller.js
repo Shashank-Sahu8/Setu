@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 const { OAuth2Client } = require('google-auth-library');
-
+const firebaseService = require('../services/services');
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 // const { Vonage } = require('@vonage/server-sdk')
 
@@ -197,3 +197,52 @@ exports.verifyGoogleToken = async (req, res) => {
     }
 }
 
+exports.update_first_time= async(req,res,next)=>{
+    const { phone, name, dob,email, region, language,uid } = req.body;
+
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ message: 'Invalid phone number format.' });
+    }
+    if (!nameRegex.test(name)) {
+      return res.status(400).json({ message: 'Invalid name format.' });
+    }
+  
+    if (email && !emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format.' });
+    }
+    
+    try {
+      let cuser = await User.findOne({ phone });
+      let user=null;
+      if(!cuser){
+        let guser = await User.findOne({ uid });
+        if(guser.uid=="")
+        {
+          return res.status(404).json({ message: 'User not found.' });
+        }
+        user = await User.findOneAndUpdate(
+          { uid },
+          { name, dob,email, region, language,phone, first_time: false },
+          { new: true }
+        );
+
+      }
+      else{
+
+         user = await User.findOneAndUpdate(
+          { phone },
+          { name, dob,email, region, language, first_time: false },
+          { new: true }
+        );
+
+      }
+      if (!user)
+        {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+      res.status(200).json({ message: 'User information updated successfully!',user});
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: 'Error updating user information.' });
+    }
+}
