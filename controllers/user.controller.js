@@ -5,6 +5,8 @@ const twilio = require('twilio');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
+const { OAuth2Client } = require('google-auth-library');
+
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 // const { Vonage } = require('@vonage/server-sdk')
 
@@ -110,3 +112,54 @@ exports.verify=async(req,res,next)=>{
 }
 
 
+exports.verifyGoogleToken = async (req, res) => {
+    const idToken = req.body.token;
+    
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'No ID token provided',
+      });
+    }
+    console.log(idToken);
+    try {
+      const decodedToken=await firebaseService.auth().verifyIdToken(idToken);
+        const uid = decodedToken.uid;
+        const email = decodedToken.email;
+        console.log("decoded");
+  
+        if (!uid || !email) {
+          return res.status(400).json({
+            success: false,
+            message: 'Token does not contain required fields',
+          });
+        }
+        console.log("proceeded");
+        let user = await User.findOne({ uid });
+        if (!user) {
+            user = new User({ uid, email,emailverified:true,first_time:true });
+            await user.save();
+        }
+        console.log("genrating token");
+        const payload = { id: user._id, email: user.email };
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  
+        const newRefreshToken = new RefreshToken({
+          token: refreshToken,
+          userId: user._id,
+        });
+        await newRefreshToken.save();
+        
+  
+        res.status(200).json({
+            token,refreshToken,user
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(401).json({
+            success: false,
+            message: 'Invalid or expired token',
+        });
+    }
+  };

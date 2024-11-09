@@ -7,6 +7,8 @@ router.post('/login',UserController.login);
 
 router.post("/verify-otp",UserController.verify);
 
+router.post('/google-login', UserController.verifyGoogleToken);
+
 //private routs
 
 module.exports=router;
