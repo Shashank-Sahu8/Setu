@@ -276,3 +276,16 @@ exports.update_first_time= async(req,res,next)=>{
       res.status(500).json({ message: 'Error updating user information.' });
     }
 }
+
+exports.logout=async(req,res)=>{
+    const token = req.body.token;
+    try{
+      console.log("j");
+      await RefreshToken.deleteOne({ token });
+      res.status(200).json({ message: 'Logged out successfully' });
+    }catch(error)
+    {
+      res.status(400).json({ message: 'Failed to log out' });
+    }
+    
+  }
