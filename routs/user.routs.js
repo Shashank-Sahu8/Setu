@@ -9,6 +9,9 @@ router.post("/verify-otp",UserController.verify);
 
 router.post('/google-login', UserController.verifyGoogleToken);
 
+router.post("/refresh",UserController.refresh);
+
+
 //private routs
 
 module.exports=router;

@@ -163,3 +163,37 @@ exports.verifyGoogleToken = async (req, res) => {
         });
     }
   };
+
+  exports.refresh = async (req, res, next) => {
+    const { token } = req.body;
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+
+        const newToken = jwt.sign(
+            { id: decoded.id, phone: decoded.phone },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' } 
+        );
+
+        const newRefreshToken = jwt.sign(
+            { id: decoded.id, phone: decoded.phone },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: '7d' }
+        );
+        let etoken = await RefreshToken.findOne({ token });
+        if(!etoken)
+        {
+          return res.status(403).json({ message: 'Invalid refresh token' });
+        }
+        await RefreshToken.deleteOne({ token });
+        const nRefreshToken = new RefreshToken({
+          token: newRefreshToken,
+          userId: etoken.userId,
+        });
+        await nRefreshToken.save();
+        res.status(200).json({ token: newToken, refreshToken: newRefreshToken });
+    } catch (error) {
+        res.status(403).json({ message: 'Invalid refresh token' });
+    }
+}
+
