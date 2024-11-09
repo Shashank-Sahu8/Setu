@@ -1,8 +1,11 @@
 const express=require('express');
 const cors=require('cors');
-const UserRouter=require('./routs/user.routs');
 const body_parser=require('body-parser');
 const app=express();
+const UserRouter=require('./routs/user.routs');
+const QuizRouter=require('./routs/quiz.routs');
+const VideoRouter=require('./routs/videos.routs');
+const DashBoardRouter=require('./routs/dashboard.routs');
 const helmet=require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
@@ -24,5 +27,8 @@ app.use(cors({
 }))
 
 app.use('/',UserRouter); 
+app.use('/quiz',QuizRouter);
+app.use('/videos',VideoRouter);
+app.use('/',DashBoardRouter);
 
 module.exports=app;

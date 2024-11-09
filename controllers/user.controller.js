@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 const { OAuth2Client } = require('google-auth-library');
 const firebaseService = require('../services/services');
+const { sendOtpEmail } = require('../services/emailService.js');
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 // const { Vonage } = require('@vonage/server-sdk')
 
@@ -62,15 +63,44 @@ exports.login=async(req,res,next)=>{
   }
 }
 
-exports.verify=async(req,res,next)=>{
-    const { phone, otp } = req.body;
 
-    if (!phoneRegex.test(phone)) {
+
+exports.emaillogin=async(req,res,next)=>{
+    const { email } = req.body;
+
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format.' });
+    }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
+
+  try {
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    const otpEntry = await OtpVerification.findOneAndUpdate(
+        { email },
+        { otp: hashedOtp,},
+        { new: true, upsert: true }
+    );
+
+    
+    await sendOtpEmail(email, otp);
+     res.status(200).json({ message: 'OTP sent successfully!' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Error sending OTP.' });
+  }
+}
+
+
+exports.verify=async(req,res,next)=>{
+    const { email, otp } = req.body;
+
+    if (!emailRegex.test(email)) {
       return res.status(400).json({ message: 'Invalid phone number format.' });
     }
 
   try {
-    const otpData = await OtpVerification.findOne({ phone });
+    const otpData = await OtpVerification.findOne({ email });
     if (!otpData) {
         return res.status(400).json({ message: 'OTP not found' });
     }
@@ -82,21 +112,21 @@ exports.verify=async(req,res,next)=>{
     const isMatch = bcrypt.compareSync(otp,otpData.otp);
     if (!isMatch) return res.status(400).json({ message: 'Invalid OTP' });
 
-    await OtpVerification.deleteOne({ phone });
+    await OtpVerification.deleteOne({ email });
 
-    let user = await User.findOne({ phone });
+    let user = await User.findOne({ email });
     if (!user) {
-      user = new User({ phone });
+      user = new User({ email });
       await user.save();
     }
     else{
       const user = await User.findOneAndUpdate(
-        { phone },
+        { email },
         { first_time: false },
         { new: true });
     }
 
-    const payload = { id: user._id, phone: user.phone };
+    const payload = { id: user._id, email: user.email };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' });
     const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
@@ -113,8 +143,8 @@ exports.verify=async(req,res,next)=>{
 
 
 exports.verifyGoogleToken = async (req, res) => {
+    console.log("request");
     const idToken = req.body.token;
-    
     if (!idToken) {
       return res.status(400).json({
         success: false,

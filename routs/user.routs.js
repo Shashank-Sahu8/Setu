@@ -14,7 +14,7 @@ router.post('/google-login', UserController.verifyGoogleToken);
 
 router.post("/refresh",UserController.refresh);
 
-
+router.post('/emaillogin',UserController.emaillogin);
 //private routs
 
 router.post("/update-info-first",verifyToken,UserController.update_first_time);
