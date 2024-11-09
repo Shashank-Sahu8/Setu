@@ -5,7 +5,7 @@ require('dotenv').config();
 
 db().then(()=>{
 app.get('/',(req,res)=>{
-    res.send(" ☠︎︎☠︎︎ Sanket Backend Services ☠︎︎☠︎︎ ")
+    res.send(" ☠︎︎☠︎︎ Setu Backend Services ☠︎︎☠︎︎ ")
 });
 
 app.listen(port,()=>console.log("server live"));
