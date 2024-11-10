@@ -12,9 +12,9 @@ const userSchema = new mongoose.Schema({
   phone:  
   { 
     type: String, 
-    default:null, 
+    default:"", 
     required: false, 
-    unique: true ,
+    unique: false ,
     validate: {
       validator: function(v) {
         // Skip validation if the phone is null

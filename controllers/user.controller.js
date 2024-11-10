@@ -67,11 +67,11 @@ exports.login=async(req,res,next)=>{
 
 exports.emaillogin=async(req,res,next)=>{
     const { email } = req.body;
-
+    console.log("valid");
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: 'Invalid email format.' });
     }
-
+    console.log("valid");
   const otp = Math.floor(100000 + Math.random() * 900000).toString(); 
 
   try {
@@ -143,7 +143,7 @@ exports.verify=async(req,res,next)=>{
 
 
 exports.verifyGoogleToken = async (req, res) => {
-    console.log("request");
+    console.log("requesting");
     const idToken = req.body.token;
     if (!idToken) {
       return res.status(400).json({
